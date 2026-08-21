@@ -1,0 +1,7 @@
+{
+  "name": "contracts-automation",
+  "version": "0.1.0",
+  "description": "Media automation contract interfaces for MuxCore",
+  "capabilities": ["contracts.automation"],
+  "roles": ["contracts"]
+}

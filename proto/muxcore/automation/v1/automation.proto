@@ -1,0 +1,257 @@
+syntax = "proto3";
+
+package muxcore.automation.v1;
+
+option go_package = "github.com/Muxcore-Media/contracts-automation/muxcore/automation/v1;automationv1";
+
+service AutomationService {
+  rpc SearchItem(SearchItemRequest) returns (SearchItemResponse);
+  rpc Dispatch(DispatchRequest) returns (DispatchResponse);
+  rpc AddToQueue(AddToQueueRequest) returns (AddToQueueResponse);
+  rpc GetQueue(GetQueueRequest) returns (GetQueueResponse);
+  rpc RemoveFromQueue(RemoveFromQueueRequest) returns (RemoveFromQueueResponse);
+  rpc GetHistory(GetHistoryRequest) returns (GetHistoryResponse);
+  rpc SearchNow(SearchNowRequest) returns (SearchNowResponse);
+  rpc ListBlocklist(ListBlocklistRequest) returns (ListBlocklistResponse);
+  rpc ClearBlocklist(ClearBlocklistRequest) returns (ClearBlocklistResponse);
+  rpc BlocklistRelease(BlocklistReleaseRequest) returns (BlocklistReleaseResponse);
+  rpc RetryImport(RetryImportRequest) returns (RetryImportResponse);
+  rpc ListDelayProfiles(ListDelayProfilesRequest) returns (ListDelayProfilesResponse);
+  rpc UpsertDelayProfile(UpsertDelayProfileRequest) returns (UpsertDelayProfileResponse);
+  rpc ListCutoffUnmet(ListCutoffUnmetRequest) returns (ListCutoffUnmetResponse);
+}
+
+message SearchItemRequest {
+  string item_type = 1;   // "movie" or "tv"
+  string query = 2;
+  int32 tmdb_id = 3;
+  int32 year = 4;
+  int32 season = 5;
+  int32 episode = 6;
+  int32 limit = 7;
+  string quality_profile_id = 8;
+  int32 absolute = 9;       // anime absolute episode number
+  string series_type = 10;  // "standard", "daily", or "anime"
+}
+
+message SearchItemResponse {
+  repeated ReleaseMatch matches = 1;
+}
+
+message ReleaseMatch {
+  string guid = 1;
+  string title = 2;
+  int64 size = 3;
+  int32 seeders = 4;
+  int32 peers = 5;
+  string indexer_name = 6;
+  string download_url = 7;
+  string info_url = 8;
+  string download_protocol = 9;
+  int32 score = 10;
+  string category = 11;
+  string sub_category = 12;
+}
+
+message DispatchRequest {
+  string guid = 1;
+  string title = 2;
+  string download_url = 3;
+  string download_protocol = 4;
+  int64 size = 5;
+  int32 score = 6;
+  string indexer_name = 7;
+  string item_type = 8;
+  string item_id = 9;
+  int32 tmdb_id = 10;
+}
+
+message DispatchResponse {
+  string download_id = 1;
+  string status = 2;
+}
+
+message AddToQueueRequest {
+  string item_type = 1;
+  string item_id = 2;
+  int32 tmdb_id = 3;
+  string title = 4;
+  int32 year = 5;
+  int32 season_number = 6;
+  int32 episode_number = 7;
+  string quality_profile_id = 8;
+  int32 absolute_number = 9;  // anime absolute episode number
+  string series_type = 10;    // "standard", "daily", or "anime"
+  string series_id = 11;      // library series id (for overrides / grouping)
+}
+
+message AddToQueueResponse {
+  string queue_id = 1;
+}
+
+message GetQueueRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string filter = 3;
+}
+
+message GetQueueResponse {
+  repeated QueueItem items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message QueueItem {
+  string id = 1;
+  string item_type = 2;
+  string item_id = 3;
+  int32 tmdb_id = 4;
+  string title = 5;
+  int32 year = 6;
+  int32 season_number = 7;
+  int32 episode_number = 8;
+  bool monitored = 9;
+  bool missing = 10;
+  string last_searched = 11;
+  string created_at = 12;
+  string updated_at = 13;
+  string quality_profile_id = 14;
+}
+
+message GetHistoryRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message GetHistoryResponse {
+  repeated DownloadRecord records = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message SearchNowRequest {}
+
+message SearchNowResponse {
+  bool started = 1;
+  string message = 2;
+}
+
+message DownloadRecord {
+  string id = 1;
+  string wanted_item_id = 2;
+  string guid = 3;
+  string title = 4;
+  string indexer = 5;
+  int64 size = 6;
+  int32 score = 7;
+  string download_url = 8;
+  string download_protocol = 9;
+  string status = 10;
+  string sent_at = 11;
+  string completed_at = 12;
+  string created_at = 13;
+  string download_id = 14;
+}
+
+message RemoveFromQueueRequest {
+  string queue_id = 1;
+}
+
+message RemoveFromQueueResponse {}
+
+message ListBlocklistRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+  string wanted_item_id = 3;
+}
+
+message BlocklistEntry {
+  string wanted_item_id = 1;
+  string guid = 2;
+  int32 loop = 3;
+  string reason = 4;
+  string created_at = 5;
+  string title = 6;
+}
+
+message ListBlocklistResponse {
+  repeated BlocklistEntry entries = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message ClearBlocklistRequest {
+  string wanted_item_id = 1; // optional: clear one item's entries
+  string guid = 2;           // optional with wanted_item_id
+  bool clear_all = 3;
+}
+
+message ClearBlocklistResponse {
+  int32 removed = 1;
+}
+
+message ListDelayProfilesRequest {}
+
+message DelayProfile {
+  string protocol = 1;
+  int32 wait_minutes = 2;
+}
+
+message ListDelayProfilesResponse {
+  repeated DelayProfile profiles = 1;
+}
+
+message UpsertDelayProfileRequest {
+  string protocol = 1;
+  int32 wait_minutes = 2;
+}
+
+message UpsertDelayProfileResponse {
+  DelayProfile profile = 1;
+}
+
+message ListCutoffUnmetRequest {
+  int32 page = 1;
+  int32 page_size = 2;
+}
+
+message CutoffItem {
+  string queue_id = 1;
+  string item_type = 2;
+  string item_id = 3;
+  string title = 4;
+  int32 year = 5;
+  int32 current_score = 6;
+  int32 cutoff_score = 7;
+  string quality_profile_id = 8;
+}
+
+message ListCutoffUnmetResponse {
+  repeated CutoffItem items = 1;
+  int32 total = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+}
+
+message BlocklistReleaseRequest {
+  string wanted_item_id = 1;
+  string guid = 2;
+  string reason = 3;
+  int32 loop = 4; // optional; defaults to 1
+}
+
+message BlocklistReleaseResponse {
+  bool success = 1;
+}
+
+message RetryImportRequest {
+  string history_id = 1; // optional; empty = retry all import_failed
+}
+
+message RetryImportResponse {
+  int32 attempted = 1;
+  string message = 2;
+}
