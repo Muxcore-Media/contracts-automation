@@ -21,7 +21,7 @@ Proto source was migrated from `media-automation/proto/automationv1/`.
 
 Generated stubs (after `make proto`): `github.com/Muxcore-Media/contracts-automation/muxcore/automation/v1`
 
-Generated Go is not checked in yet; run `make proto` when `protoc` and the Go plugins are available.
+Generated stubs: `github.com/Muxcore-Media/contracts-automation/muxcore/automation/v1` (checked in; run `make proto` after `.proto` edits).
 
 ## Implementing Modules
 
