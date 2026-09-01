@@ -9,7 +9,9 @@ service AutomationService {
   rpc Dispatch(DispatchRequest) returns (DispatchResponse);
   rpc AddToQueue(AddToQueueRequest) returns (AddToQueueResponse);
   rpc GetQueue(GetQueueRequest) returns (GetQueueResponse);
+  rpc UpdateQueueItem(UpdateQueueItemRequest) returns (UpdateQueueItemResponse);
   rpc RemoveFromQueue(RemoveFromQueueRequest) returns (RemoveFromQueueResponse);
+  rpc SetMonitored(SetMonitoredRequest) returns (SetMonitoredResponse);
   rpc GetHistory(GetHistoryRequest) returns (GetHistoryResponse);
   rpc SearchNow(SearchNowRequest) returns (SearchNowResponse);
   rpc ListBlocklist(ListBlocklistRequest) returns (ListBlocklistResponse);
@@ -19,10 +21,14 @@ service AutomationService {
   rpc ListDelayProfiles(ListDelayProfilesRequest) returns (ListDelayProfilesResponse);
   rpc UpsertDelayProfile(UpsertDelayProfileRequest) returns (UpsertDelayProfileResponse);
   rpc ListCutoffUnmet(ListCutoffUnmetRequest) returns (ListCutoffUnmetResponse);
+  rpc ListSeriesOverrides(ListSeriesOverridesRequest) returns (ListSeriesOverridesResponse);
+  rpc UpsertSeriesOverride(UpsertSeriesOverrideRequest) returns (UpsertSeriesOverrideResponse);
+  rpc DeleteSeriesOverride(DeleteSeriesOverrideRequest) returns (DeleteSeriesOverrideResponse);
+  rpc GetCapabilities(GetCapabilitiesRequest) returns (GetCapabilitiesResponse);
 }
 
 message SearchItemRequest {
-  string item_type = 1;   // "movie" or "tv"
+  string item_type = 1;   // movie|tv|music|book|comic|audiobook
   string query = 2;
   int32 tmdb_id = 3;
   int32 year = 4;
@@ -51,6 +57,9 @@ message ReleaseMatch {
   int32 score = 10;
   string category = 11;
   string sub_category = 12;
+  bool rejected = 13;              // true when the release failed quality/title/cutoff checks
+  string rejection_reason = 14;      // human-readable reason when rejected=true
+  int32 format_score = 15;           // optional custom-format score component
 }
 
 message DispatchRequest {
@@ -72,7 +81,7 @@ message DispatchResponse {
 }
 
 message AddToQueueRequest {
-  string item_type = 1;
+  string item_type = 1;   // movie|tv|music|book|comic|audiobook
   string item_id = 2;
   int32 tmdb_id = 3;
   string title = 4;
@@ -83,6 +92,7 @@ message AddToQueueRequest {
   int32 absolute_number = 9;  // anime absolute episode number
   string series_type = 10;    // "standard", "daily", or "anime"
   string series_id = 11;      // library series id (for overrides / grouping)
+  bool monitored = 12;          // optional; defaults to true when unset
 }
 
 message AddToQueueResponse {
@@ -92,7 +102,9 @@ message AddToQueueResponse {
 message GetQueueRequest {
   int32 page = 1;
   int32 page_size = 2;
-  string filter = 3;
+  string filter = 3;              // optional item_type filter: movie|tv|music|book|comic|audiobook
+  optional bool missing = 4;        // when set, filter by missing file on disk
+  optional bool monitored = 5;    // when set, filter by monitored flag
 }
 
 message GetQueueResponse {
@@ -117,11 +129,26 @@ message QueueItem {
   string created_at = 12;
   string updated_at = 13;
   string quality_profile_id = 14;
+  string series_id = 15;          // library series id (TV grouping / overrides)
+  int32 absolute_number = 16;     // anime absolute episode number
+  string series_type = 17;        // "standard", "daily", or "anime"
+}
+
+message UpdateQueueItemRequest {
+  string queue_id = 1;
+  optional bool monitored = 2;
+  string quality_profile_id = 3;  // empty = leave unchanged
+}
+
+message UpdateQueueItemResponse {
+  QueueItem item = 1;
 }
 
 message GetHistoryRequest {
   int32 page = 1;
   int32 page_size = 2;
+  string status = 3;          // optional: filter by status (e.g. import_failed, stalled)
+  string wanted_item_id = 4;  // optional: filter by wanted queue item
 }
 
 message GetHistoryResponse {
@@ -131,7 +158,11 @@ message GetHistoryResponse {
   int32 page_size = 4;
 }
 
-message SearchNowRequest {}
+message SearchNowRequest {
+  string queue_id = 1;    // optional: search one queue item by id
+  string item_type = 2;   // optional with item_id: movie|tv|music|book|comic|audiobook
+  string item_id = 3;     // optional with item_type: library item id
+}
 
 message SearchNowResponse {
   bool started = 1;
@@ -162,6 +193,15 @@ message RemoveFromQueueRequest {
 }
 
 message RemoveFromQueueResponse {}
+
+message SetMonitoredRequest {
+  string queue_id = 1;
+  bool monitored = 2;
+}
+
+message SetMonitoredResponse {
+  QueueItem item = 1;
+}
 
 message ListBlocklistRequest {
   int32 page = 1;
@@ -256,4 +296,42 @@ message RetryImportRequest {
 message RetryImportResponse {
   int32 attempted = 1;
   string message = 2;
+}
+
+message SeriesOverride {
+  string series_id = 1;
+  int32 delay_minutes = 2;
+  repeated string preferred_groups = 3;
+  repeated string ignored_groups = 4;
+}
+
+message ListSeriesOverridesRequest {}
+
+message ListSeriesOverridesResponse {
+  repeated SeriesOverride overrides = 1;
+}
+
+message UpsertSeriesOverrideRequest {
+  SeriesOverride override = 1;
+}
+
+message UpsertSeriesOverrideResponse {
+  SeriesOverride override = 1;
+}
+
+message DeleteSeriesOverrideRequest {
+  string series_id = 1;
+}
+
+message DeleteSeriesOverrideResponse {}
+
+message GetCapabilitiesRequest {}
+
+message GetCapabilitiesResponse {
+  repeated string supported_item_types = 1;  // e.g. movie, tv, music, book, comic, audiobook
+  bool supports_delay_profiles = 2;
+  bool supports_cutoff = 3;
+  bool supports_blocklist = 4;
+  bool supports_anime_absolute = 5;
+  repeated string supported_protocols = 6;   // e.g. torrent, usenet
 }

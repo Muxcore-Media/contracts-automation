@@ -5,15 +5,17 @@ Protobuf/gRPC contract interfaces for media acquisition automation modules in Mu
 ## Proto Service
 
 - **`AutomationService`** (`proto/muxcore/automation/v1/automation.proto`)
-  - `SearchItem` — search indexers for a wanted movie or episode
+  - `SearchItem` — search indexers for a wanted item (`item_type`: movie|tv|music|book|comic|audiobook)
   - `Dispatch` — send a selected release to a downloader
-  - `AddToQueue` / `GetQueue` / `RemoveFromQueue` — manage the wanted queue
-  - `GetHistory` — download dispatch history
-  - `SearchNow` — trigger an immediate search pass
+  - `AddToQueue` / `GetQueue` / `UpdateQueueItem` / `RemoveFromQueue` — manage the wanted queue
+  - `GetHistory` — download dispatch history (filter by `status`, `wanted_item_id`)
+  - `SearchNow` — trigger search (full queue or one item via `queue_id` / `item_type`+`item_id`)
   - `ListBlocklist` / `ClearBlocklist` / `BlocklistRelease` — release blocklist management
   - `ListDelayProfiles` / `UpsertDelayProfile` — per-protocol delay profiles
   - `ListCutoffUnmet` — items below quality cutoff
+  - `ListSeriesOverrides` / `UpsertSeriesOverride` / `DeleteSeriesOverride` — per-series delay/group overrides
   - `RetryImport` — retry failed post-download imports
+  - `GetCapabilities` — discover automation features (item types, delay/cutoff/blocklist, anime absolute, protocols)
 
 Proto source was migrated from `media-automation/proto/automationv1/`.
 
